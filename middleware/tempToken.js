@@ -7,16 +7,12 @@ module.exports = function tempToken(req, res, next) {
 
   // Get the project and form.
   const url = _.get(req.body, 'data.baseUrl');
-  const project = _.get(req.body, 'data.project');
   const form = _.get(req.body, 'data.form');
   const submission = _.get(req.body, 'data.submission');
 
   req.body.url += '?';
   if (url) {
     req.body.url += `baseUrl=${url}&`;
-  }
-  if (project) {
-    req.body.url += `project=${project}&`;
   }
   if (form) {
     req.body.url += `form=${form}&`;
@@ -27,22 +23,22 @@ module.exports = function tempToken(req, res, next) {
 
   // If a project is provided and we are authenticated, then we can fetch a temp token that can only access
   // this submission for a limited time period.
-  if (project && req.headers['x-jwt-token']) {
+  if (req.headers['x-jwt-token']) {
     request.get({
       url: `${url}/token`,
       json: true,
       headers: {
-        'x-allow': `GET:/project/${project}/form/${form}/submission/${submission}`,
+        'x-allow': `GET:/form/${form}/submission/${submission}`,
         'x-jwt-token': req.headers['x-jwt-token']
       }
     }, (err, response, body) => {
       if (err) {
         return next(err);
       }
-      if (!body || !body.key) {
+      if (!body || !body.token) {
         return res.status(401).send('Unauthorized');
       }
-      req.body.url += `token=${body.key}`;
+      req.body.url += `token=${body.token}`;
       next();
     });
   }
